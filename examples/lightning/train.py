@@ -110,7 +110,7 @@ if __name__ == '__main__':
     )
 
     trainer = pl.Trainer(
-        gpus=NUM_GPUS,
+        devices=NUM_GPUS,
         max_epochs=EPOCHS,
         accumulate_grad_batches=1,
         sync_batchnorm=True
