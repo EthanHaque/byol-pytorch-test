@@ -99,14 +99,28 @@ class ImagesDataset(Dataset):
 if __name__ == '__main__':
     from torchvision.datasets import CIFAR10
 
+
+    class ImageOnlyDataset(Dataset):
+        def __init__(self, original_dataset):
+            self.original_dataset = original_dataset
+
+        def __len__(self):
+            return len(self.original_dataset)
+
+        def __getitem__(self, idx):
+            image, _ = self.original_dataset[idx]
+            return image
+
+
+    # Define transformations
     transform = transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
     ])
 
     ds = CIFAR10(root='/scratch/gpfs/eh0560/data', train=True, download=False, transform=transform)
-
-    train_loader = DataLoader(ds, batch_size=BATCH_SIZE, num_workers=NUM_WORKERS, shuffle=True)
+    trainset = ImageOnlyDataset(ds)
+    train_loader = DataLoader(trainset, batch_size=BATCH_SIZE, num_workers=NUM_WORKERS, shuffle=True)
 
     model = SelfSupervisedLearner(
         resnet,
