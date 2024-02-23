@@ -32,7 +32,8 @@ LR = 3e-4
 NUM_GPUS = 1
 IMAGE_SIZE = 32
 IMAGE_EXTS = ['.jpg', '.png', '.jpeg']
-NUM_WORKERS = multiprocessing.cpu_count()
+# NUM_WORKERS = multiprocessing.cpu_count()
+NUM_WORKERS = 4
 
 
 # pytorch lightning module
@@ -97,7 +98,13 @@ class ImagesDataset(Dataset):
 
 if __name__ == '__main__':
     from torchvision.datasets import CIFAR10
-    ds = CIFAR10(root='/scratch/gpfs/eh0560/data/', transform=transforms.ToTensor())
+
+    transform = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+    ])
+
+    ds = CIFAR10(root='/scratch/gpfs/eh0560/data', train=True, download=False, transform=transform)
 
     train_loader = DataLoader(ds, batch_size=BATCH_SIZE, num_workers=NUM_WORKERS, shuffle=True)
 
