@@ -97,7 +97,7 @@ class ImagesDataset(Dataset):
 
 if __name__ == '__main__':
     from torchvision.datasets import CIFAR10
-    ds = CIFAR10(root='/scratch/gpfs/eh0560/data/cifar-10-batches-py')
+    ds = CIFAR10(root='/scratch/gpfs/eh0560/data/')
     train_loader = DataLoader(ds, batch_size=BATCH_SIZE, num_workers=NUM_WORKERS, shuffle=True)
 
     model = SelfSupervisedLearner(
