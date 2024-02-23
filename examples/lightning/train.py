@@ -19,22 +19,20 @@ resnet = models.resnet50(pretrained=True)
 
 parser = argparse.ArgumentParser(description='byol-lightning-test')
 
-parser.add_argument('--image_folder', type=str, required=True,
-                    help='path to your folder of images for self-supervised learning')
+parser.add_argument('--image_folder', type=str, required = True,
+                       help='path to your folder of images for self-supervised learning')
 
 args = parser.parse_args()
 
 # constants
 
 BATCH_SIZE = 32
-EPOCHS = 1000
-LR = 3e-4
-NUM_GPUS = 1
-IMAGE_SIZE = 32
+EPOCHS     = 1000
+LR         = 3e-4
+NUM_GPUS   = 2
+IMAGE_SIZE = 256
 IMAGE_EXTS = ['.jpg', '.png', '.jpeg']
-# NUM_WORKERS = multiprocessing.cpu_count()
-NUM_WORKERS = 4
-
+NUM_WORKERS = multiprocessing.cpu_count()
 
 # pytorch lightning module
 
@@ -57,12 +55,10 @@ class SelfSupervisedLearner(pl.LightningModule):
         if self.learner.use_momentum:
             self.learner.update_moving_average()
 
-
 # images dataset
 
 def expand_greyscale(t):
     return t.expand(3, -1, -1)
-
 
 class ImagesDataset(Dataset):
     def __init__(self, folder, image_size):
@@ -93,49 +89,26 @@ class ImagesDataset(Dataset):
         img = img.convert('RGB')
         return self.transform(img)
 
-
 # main
 
 if __name__ == '__main__':
-    from torchvision.datasets import CIFAR10
-
-
-    class ImageOnlyDataset(Dataset):
-        def __init__(self, original_dataset):
-            self.original_dataset = original_dataset
-
-        def __len__(self):
-            return len(self.original_dataset)
-
-        def __getitem__(self, idx):
-            image, _ = self.original_dataset[idx]
-            return image
-
-
-    # Define transformations
-    transform = transforms.Compose([
-        transforms.ToTensor(),
-        transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
-    ])
-
-    ds = CIFAR10(root='/scratch/gpfs/eh0560/data', train=True, download=False, transform=transform)
-    trainset = ImageOnlyDataset(ds)
-    train_loader = DataLoader(trainset, batch_size=BATCH_SIZE, num_workers=NUM_WORKERS, shuffle=True)
+    ds = ImagesDataset(args.image_folder, IMAGE_SIZE)
+    train_loader = DataLoader(ds, batch_size=BATCH_SIZE, num_workers=NUM_WORKERS, shuffle=True)
 
     model = SelfSupervisedLearner(
         resnet,
-        image_size=IMAGE_SIZE,
-        hidden_layer='avgpool',
-        projection_size=256,
-        projection_hidden_size=4096,
-        moving_average_decay=0.99
+        image_size = IMAGE_SIZE,
+        hidden_layer = 'avgpool',
+        projection_size = 256,
+        projection_hidden_size = 4096,
+        moving_average_decay = 0.99
     )
 
     trainer = pl.Trainer(
-        devices=NUM_GPUS,
-        max_epochs=EPOCHS,
-        accumulate_grad_batches=1,
-        sync_batchnorm=True
+        gpus = NUM_GPUS,
+        max_epochs = EPOCHS,
+        accumulate_grad_batches = 1,
+        sync_batchnorm = True
     )
 
     trainer.fit(model, train_loader)
